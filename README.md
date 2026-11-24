@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="assets/sinclair-one-logo.png" alt="Sinclair One" width="600">
+
+</div>
+
 # Project Sinclair
 
 Project Sinclair is a Rust workspace for a multi-machine Sinclair emulator.

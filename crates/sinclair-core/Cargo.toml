@@ -1,0 +1,4 @@
+[package]
+name = "sinclair-core"
+version.workspace = true
+edition.workspace = true

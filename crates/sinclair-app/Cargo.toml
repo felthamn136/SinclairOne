@@ -1,0 +1,9 @@
+[package]
+name = "sinclair-app"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+macroquad = "0.4"
+sinclair-core = { path = "../sinclair-core" }
+sinclair-spectrum48 = { path = "../sinclair-spectrum48" }

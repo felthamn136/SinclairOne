@@ -1,0 +1,5 @@
+[package]
+name = "sinclair-cpu-z80"
+version.workspace = true
+edition.workspace = true
+

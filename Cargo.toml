@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "crates/sinclair-core",
+    "crates/sinclair-cpu-z80",
+    "crates/sinclair-spectrum48",
+    "crates/sinclair-app",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"

@@ -14,6 +14,46 @@ struct TestBus {
     reti_count: usize,
 }
 
+#[test]
+fn opcode_fetches_are_distinct_from_operand_and_data_reads() {
+    struct FetchBus {
+        memory: [u8; 65536],
+        opcode_reads: Vec<u16>,
+        data_reads: Vec<u16>,
+    }
+    impl Bus for FetchBus {
+        fn read_memory(&mut self, address: u16) -> u8 {
+            self.data_reads.push(address);
+            self.memory[usize::from(address)]
+        }
+        fn read_opcode(&mut self, address: u16) -> u8 {
+            self.opcode_reads.push(address);
+            self.memory[usize::from(address)]
+        }
+        fn write_memory(&mut self, address: u16, value: u8) {
+            self.memory[usize::from(address)] = value;
+        }
+        fn read_port(&mut self, _: u16) -> u8 {
+            0xff
+        }
+        fn write_port(&mut self, _: u16, _: u8) {}
+    }
+    let mut bus = FetchBus {
+        memory: [0; 65536],
+        opcode_reads: Vec::new(),
+        data_reads: Vec::new(),
+    };
+    // LD A,12; RLC A; DD CB 01 46 (BIT 0,(IX+1)); HALT.
+    bus.memory[..10].copy_from_slice(&[0x3e, 0x12, 0xcb, 0x07, 0xdd, 0xcb, 0x01, 0x46, 0x76, 0]);
+    let mut cpu = Z80::new();
+    cpu.ix = 0x8000;
+    for _ in 0..5 {
+        cpu.step(&mut bus);
+    }
+    assert_eq!(bus.opcode_reads, [0, 2, 3, 4, 5, 8, 9]);
+    assert_eq!(bus.data_reads, [1, 6, 7, 0x8001]);
+}
+
 impl TestBus {
     fn new(program: &[u8]) -> Self {
         let mut bus = Self {

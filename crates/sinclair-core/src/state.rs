@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{Error, Machine, Result};
+use crate::{Error, Frame, Machine, Result};
 
 /// An in-memory envelope; persistent encoding is a host concern.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -115,11 +115,35 @@ impl StateManager {
             return Ok(());
         }
         let state = machine.save_state()?;
+        self.validate_checkpoint(&state)?;
+        self.push_checkpoint(state);
+        Ok(())
+    }
+
+    /// Run a frame and record its starting state only if the frame succeeds.
+    pub fn run_frame<'a>(&mut self, machine: &'a mut dyn Machine) -> Result<Frame<'a>> {
+        if self.history_length == 0 {
+            return machine.run_frame();
+        }
+        let state = machine.save_state()?;
+        self.validate_checkpoint(&state)?;
+        let frame = machine.run_frame()?;
+        self.push_checkpoint(state);
+        Ok(frame)
+    }
+
+    fn validate_checkpoint(&self, state: &State) -> Result<()> {
+        if let Some(previous) = self.history.back() {
+            state.validate_for(&previous.machine_id, previous.version)?;
+        }
+        Ok(())
+    }
+
+    fn push_checkpoint(&mut self, state: State) {
         if self.history.len() == self.history_length {
             self.history.pop_front();
         }
         self.history.push_back(state);
-        Ok(())
     }
 
     /// Restore and consume the most recent checkpoint; failures retain history.

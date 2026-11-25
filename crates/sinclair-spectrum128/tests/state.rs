@@ -2,7 +2,11 @@ use sinclair_core::{
     media::Media, services::input::InputEvent, state::StateManager, Error, Machine,
 };
 use sinclair_spectrum128::{memory::BANK_SIZE, Spectrum128};
-use sinclair_spectrum48::{memory::ROM_SIZE, Spectrum48};
+use sinclair_spectrum48::{
+    memory::ROM_SIZE,
+    video::{FrameConfig, Ula},
+    Spectrum48,
+};
 
 fn machine() -> Spectrum128 {
     Spectrum128::new(&[0x11; BANK_SIZE], &[0x22; BANK_SIZE]).unwrap()
@@ -97,6 +101,70 @@ fn quick_slot_and_rolling_rewind_keep_transactional_history() {
     assert_eq!(manager.recorded(), 0);
     manager.record(&machine).unwrap();
     assert_eq!(manager.recorded(), 0);
+}
+
+#[test]
+fn rewind_restores_selected_screen_and_discards_abandoned_future() {
+    let mut machine = machine();
+    let mut manager = StateManager::new(3);
+    let render = |machine: &Spectrum128| {
+        Ula::new()
+            .render_frame(
+                machine.memory(),
+                &FrameConfig {
+                    frame_number: 0,
+                    border_colour: 0,
+                    border_changes: &[],
+                },
+            )
+            .unwrap()
+    };
+    machine.memory_mut().write(0x4000, 0x80);
+    machine.memory_mut().write(0x5800, 0x07);
+    let first = render(&machine);
+    manager.record(&machine).unwrap();
+
+    machine.memory_mut().write_port(0x7ffd, 0x0f);
+    machine.memory_mut().write(0xc000, 0x40);
+    machine.memory_mut().write(0xd800, 0x02);
+    let second = render(&machine);
+    assert_ne!(first, second);
+    manager.record(&machine).unwrap();
+
+    machine.memory_mut().write(0xc000, 0xff);
+    manager.rewind(&mut machine).unwrap();
+    assert_eq!(machine.memory().screen_bank(), 7);
+    assert_eq!(render(&machine), second);
+    manager.rewind(&mut machine).unwrap();
+    assert_eq!(machine.memory().screen_bank(), 5);
+    assert_eq!(render(&machine), first);
+
+    machine.memory_mut().write(0x4000, 0x20);
+    let branch = render(&machine);
+    manager.record(&machine).unwrap();
+    machine.memory_mut().write(0x4000, 0x10);
+    manager.rewind(&mut machine).unwrap();
+    assert_eq!(render(&machine), branch);
+    assert!(manager.rewind(&mut machine).is_err());
+}
+
+#[test]
+fn recording_a_different_machine_preserves_existing_history() {
+    let mut machine = machine();
+    let mut other = Spectrum48::new(&[0; ROM_SIZE]).unwrap();
+    let mut manager = StateManager::new(1);
+    machine.memory_mut().write(0xc000, 42);
+    manager.record(&machine).unwrap();
+    assert!(matches!(
+        manager.record(&other),
+        Err(Error::IncompatibleState(_))
+    ));
+    assert_eq!(manager.recorded(), 1);
+    machine.memory_mut().write(0xc000, 0);
+    manager.rewind(&mut machine).unwrap();
+    assert_eq!(machine.memory().read(0xc000), 42);
+    manager.record(&other).unwrap();
+    manager.rewind(&mut other).unwrap();
 }
 
 #[test]

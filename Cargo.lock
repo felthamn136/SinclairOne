@@ -297,6 +297,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sinclair-zx81"
+version = "0.1.0"
+dependencies = [
+ "sinclair-core",
+ "sinclair-cpu-z80",
+ "sinclair-spectrum48",
+]
+
+[[package]]
 name = "ttf-parser"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

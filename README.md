@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/sinclair-one-logo.png" alt="Sinclair One" width="600">
+<img src="assets/sinclair-one-banner.png" alt="Sinclair One" width="100%">
 
 </div>
 
@@ -22,6 +22,7 @@ previews, **not a working emulator**.
     ├── sinclair-cpu-z80/       # Z80 and its bus contract
     ├── sinclair-spectrum48/   # 48K machine, memory map and media boundary
     ├── sinclair-spectrum128/  # 128K memory paging and machine boundary
+    ├── sinclair-zx81/         # ZX81 memory, program and video components
     └── sinclair-app/          # Macroquad application
 ```
 
@@ -32,6 +33,8 @@ hierarchy, API contracts, expansion strategy, and acceptance criteria. The
 [TZX support](docs/tzx.md) documents pulse playback and supported blocks.
 [SNA support](docs/sna.md) describes 48K snapshot loading and saving.
 [Save states and rewind](docs/state.md) describes the in-memory state APIs.
+[ZX81 components](docs/zx81.md) describes their current capabilities and limits.
+[QL architecture proposal](docs/ql.md) outlines future QL support.
 The [128K paging guide](docs/architecture.md#spectrum-128k-memory-and-bus)
 describes the 128K memory map and display banks.
 
@@ -54,3 +57,9 @@ ROM-driven loading. In-memory save states and rewind are available through
 the machine APIs, but the application has no snapshot controls. Audio hardware
 and output are not implemented. No ROM is distributed; future emulation must
 use a legally obtained compatible ROM.
+
+The ZX81 crate provides a machine boundary with input and in-memory state,
+1K/16K memory mapping, direct `.p` image copying, PCM WAV tape input and a
+non-cycle-timed display-file renderer. It requires an externally supplied 8K
+ZX81 ROM. It provides instruction-level stepping but not a frame loop,
+cycle-timed video or complete FAST/SLOW display timing.

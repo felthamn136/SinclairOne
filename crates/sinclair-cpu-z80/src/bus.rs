@@ -8,6 +8,11 @@ pub trait Bus {
     fn read_port(&mut self, port: u16) -> u8;
     fn write_port(&mut self, port: u16, value: u8);
 
+    /// Read during an M1 opcode-fetch cycle, including repeated HALT fetches.
+    fn read_opcode(&mut self, address: u16) -> u8 {
+        self.read_memory(address)
+    }
+
     /// Byte supplied by the interrupting device during interrupt acknowledge.
     fn interrupt_acknowledge(&mut self) -> u8 {
         0xff

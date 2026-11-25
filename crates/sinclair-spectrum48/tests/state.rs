@@ -1,7 +1,7 @@
 use sinclair_core::{
     media::Media,
     services::input::InputEvent,
-    state::{State, StateReader, StateWriter},
+    state::{State, StateManager, StateReader, StateWriter},
     Error, Machine,
 };
 use sinclair_spectrum48::{
@@ -11,6 +11,7 @@ use sinclair_spectrum48::{
         tzx::{PlaybackStatus, TzxDeck, TzxImage},
     },
     memory::{Memory, RAM_SIZE, ROM_SIZE},
+    video::{FrameConfig, Ula},
     Spectrum48,
 };
 
@@ -89,6 +90,34 @@ fn saves_and_restores_cpu_ram_border_keyboard_and_tape() {
         tape
     );
     assert_eq!(machine.save_state().unwrap(), saved);
+}
+
+#[test]
+fn quick_load_restores_rendered_screen_and_border() {
+    let mut machine = Spectrum48::new(&[0; ROM_SIZE]).unwrap();
+    mount(&mut machine, "sna", &sna(17));
+    let render = |machine: &Spectrum48| {
+        Ula::new()
+            .render_frame(
+                machine.memory(),
+                &FrameConfig {
+                    frame_number: 16,
+                    border_colour: machine.border_colour(),
+                    border_changes: &[],
+                },
+            )
+            .unwrap()
+    };
+    let expected = render(&machine);
+    let cpu = machine.cpu().state_bytes();
+    let mut manager = StateManager::new(1);
+    manager.quick_save(&machine).unwrap();
+    mount(&mut machine, "sna", &sna(44));
+    assert_ne!(render(&machine), expected);
+    assert_ne!(machine.cpu().state_bytes(), cpu);
+    manager.quick_load(&mut machine).unwrap();
+    assert_eq!(render(&machine), expected);
+    assert_eq!(machine.cpu().state_bytes(), cpu);
 }
 
 #[test]

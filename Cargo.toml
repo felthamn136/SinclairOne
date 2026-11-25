@@ -4,6 +4,7 @@ members = [
     "crates/sinclair-cpu-z80",
     "crates/sinclair-spectrum48",
     "crates/sinclair-spectrum128",
+    "crates/sinclair-zx81",
     "crates/sinclair-app",
 ]
 resolver = "2"

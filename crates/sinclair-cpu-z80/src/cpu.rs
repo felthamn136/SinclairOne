@@ -258,7 +258,9 @@ impl Z80 {
             self.im0_extra_cycles += 2;
             bus.interrupt_acknowledge()
         } else {
-            self.fetch8(bus)
+            let value = bus.read_opcode(self.pc);
+            self.pc = self.pc.wrapping_add(1);
+            value
         }
     }
 
@@ -354,7 +356,7 @@ impl Z80 {
         if self.halted {
             self.increment_r();
             // HALT continues issuing M1 cycles at the instruction after HALT.
-            bus.read_memory(self.pc);
+            bus.read_opcode(self.pc);
             return 4;
         }
         let opcode = self.fetch_opcode(bus);

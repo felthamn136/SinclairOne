@@ -32,6 +32,18 @@ pub trait Machine {
     fn input(&mut self, event: InputEvent) -> Result<()>;
     fn run_frame(&mut self) -> Result<Frame<'_>>;
     fn load_media(&mut self, media: &Media<'_>) -> Result<()>;
+    /// Release resources before the machine is removed. Failure keeps it active.
+    fn shutdown(&mut self) -> Result<()> {
+        Ok(())
+    }
+    /// Eject removable media, if supported by this machine.
+    fn eject_media(&mut self) -> Result<()> {
+        Err(crate::Error::Unsupported("media ejection"))
+    }
+    /// Return the format of mounted removable media, if any.
+    fn media_information(&self) -> Result<Option<&'static str>> {
+        Err(crate::Error::Unsupported("media information"))
+    }
     fn save_state(&self) -> Result<State>;
     /// Validate fully before changing the machine; errors leave it unchanged.
     fn load_state(&mut self, state: &State) -> Result<()>;

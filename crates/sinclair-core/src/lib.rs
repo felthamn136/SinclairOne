@@ -2,6 +2,7 @@
 
 pub mod error;
 pub mod machine;
+pub mod manager;
 pub mod media;
 pub mod services;
 pub mod state;

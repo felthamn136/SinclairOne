@@ -45,9 +45,11 @@ machine changes or other timeline changes. Each checkpoint stores a full
 snapshot including ROM and tape data; memory consumption grows with history
 length and mounted image size.
 
-The application is still only a keyboard preview. It has no quick-save keys,
-rewind controls or machine frame loop. A future host must wire `UiCommand`
-actions and `StateManager::run_frame` into that loop and surface errors.
+The application is still a machine-selection and keyboard preview. The
+machine manager exposes quick-save, rewind and frame recording, but the
+application has no quick-save keys, rewind controls or machine frame loop.
+A future host must wire `UiCommand` actions and `MachineManager::run_frame`
+into that loop and surface errors.
 
 Acceptance tests run with `cargo test -p sinclair-spectrum48 --test state`,
 `cargo test -p sinclair-spectrum128 --test state`, and `cargo test

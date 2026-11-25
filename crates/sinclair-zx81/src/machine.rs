@@ -137,6 +137,19 @@ impl Machine for Zx81 {
         }
     }
 
+    fn eject_media(&mut self) -> Result<()> {
+        self.tape = None;
+        Ok(())
+    }
+
+    fn media_information(&self) -> Result<Option<&'static str>> {
+        Ok(match self.tape.as_ref() {
+            Some(Tape::Program(_)) => Some("p-tape"),
+            Some(Tape::Wav(_)) => Some("wav"),
+            None => None,
+        })
+    }
+
     fn save_state(&self) -> Result<State> {
         let mut writer = StateWriter::new();
         writer.bytes(self.memory.rom())?;

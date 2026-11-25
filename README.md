@@ -18,7 +18,7 @@ previews, **not a working emulator**.
 ├── docs/
 │   └── architecture.md
 └── crates/
-    ├── sinclair-core/          # machine and shared-service contracts
+    ├── sinclair-core/          # machine manager and shared-service contracts
     ├── sinclair-cpu-z80/       # Z80 and its bus contract
     ├── sinclair-spectrum48/   # 48K machine, memory map and media boundary
     ├── sinclair-spectrum128/  # 128K memory paging and machine boundary
@@ -35,6 +35,7 @@ hierarchy, API contracts, expansion strategy, and acceptance criteria. The
 [Save states and rewind](docs/state.md) describes the in-memory state APIs.
 [ZX81 components](docs/zx81.md) describes their current capabilities and limits.
 [QL architecture proposal](docs/ql.md) outlines future QL support.
+[Machine manager](docs/machine-manager.md) describes registration and lifecycle.
 The [128K paging guide](docs/architecture.md#spectrum-128k-memory-and-bus)
 describes the 128K memory map and display banks.
 
@@ -48,10 +49,36 @@ cargo test --workspace
 cargo run -p sinclair-app
 ```
 
-The application is an architecture preview, not a running machine. The Z80,
+The application is an architecture preview, not a running machine. It opens a
+machine menu (Up/Down and Enter); Esc unloads the current machine and returns
+to the menu. ZX81, Spectrum 48K and 128K can be constructed from supplied ROMs,
+but cannot run frames. Spectrum 16K and QL are listed as not implemented.
+
+Create `machine_config.json` in the working directory to configure legally
+obtained ROMs. Paths may be absolute or relative to that directory:
+
+```json
+{
+  "startup_machine": null,
+  "zx81_rom": "roms\\zx81.rom",
+  "zx81_ram_kib": 16,
+  "spectrum48_rom": "roms\\spectrum48.rom",
+  "spectrum128_rom0": "roms\\spectrum128-0.rom",
+  "spectrum128_rom1": "roms\\spectrum128-1.rom",
+  "rewind_history_length": 300
+}
+```
+
+Set unused ROM paths to `null` or omit them. ROM 0 is 128K BASIC and ROM 1 is
+48K BASIC. The last successfully selected machine becomes the startup machine;
+set it to `null` to start at the menu. Invalid configuration is reported and
+not overwritten. The manager supports programmatic media, quick-state and
+rewind operations; these are not yet exposed as app controls.
+
+The Z80,
 Spectrum memory/bus and ULA snapshot renderer are not yet connected. The
-preview includes a keyboard matrix display: Shift is CAPS SHIFT, Ctrl is
-SYMBOL SHIFT, and Esc releases held keys. TAP images can be mounted and
+preview includes a Spectrum keyboard matrix display: Shift is CAPS SHIFT and
+Ctrl is SYMBOL SHIFT. TAP images can be mounted and
 validated, and TZX pulse playback is available, but neither is connected to
 ROM-driven loading. In-memory save states and rewind are available through
 the machine APIs, but the application has no snapshot controls. Audio hardware

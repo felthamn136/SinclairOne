@@ -123,6 +123,22 @@ impl Machine for Spectrum48 {
         }
     }
 
+    fn eject_media(&mut self) -> Result<()> {
+        self.tape = None;
+        self.tzx_tape = None;
+        Ok(())
+    }
+
+    fn media_information(&self) -> Result<Option<&'static str>> {
+        Ok(if self.tape.is_some() {
+            Some("tap")
+        } else if self.tzx_tape.is_some() {
+            Some("tzx")
+        } else {
+            None
+        })
+    }
+
     fn save_state(&self) -> Result<State> {
         let mut writer = StateWriter::new();
         writer.bytes(self.memory.rom())?;

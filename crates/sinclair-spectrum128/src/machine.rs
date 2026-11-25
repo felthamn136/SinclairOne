@@ -84,6 +84,15 @@ impl Machine for Spectrum128 {
         Ok(())
     }
 
+    fn eject_media(&mut self) -> Result<()> {
+        self.tzx_tape = None;
+        Ok(())
+    }
+
+    fn media_information(&self) -> Result<Option<&'static str>> {
+        Ok(self.tzx_tape.as_ref().map(|_| "tzx"))
+    }
+
     fn save_state(&self) -> Result<State> {
         let mut writer = StateWriter::new();
         writer.bytes(&self.cpu.state_bytes())?;

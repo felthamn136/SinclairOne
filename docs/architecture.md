@@ -3,8 +3,8 @@
 ## Status and scope
 
 This is an initial architecture, not an emulator release. The Macroquad
-application is a status and keyboard-matrix preview. The 48K memory map and
-128K paging, a standalone Z80 core, Spectrum ULA snapshot renderer, TAP and TZX
+application is a machine-selection and keyboard-matrix preview. The 48K memory
+map and 128K paging, a standalone Z80 core, Spectrum ULA snapshot renderer, TAP and TZX
 parsers, TZX pulse playback, a 48K SNA codec and in-memory machine states
 are available. Machine scheduling, other hardware and shared-service
 backends are not implemented. Unsupported machine operations
@@ -29,6 +29,7 @@ crates/
       lib.rs                          public machine-neutral API
       error.rs                        shared Result and explicit errors
       machine.rs                      Machine, metadata, video and audio frames
+      manager.rs                      registry, lifecycle and state routing
       media.rs                        opaque media input and codec contract
       state.rs                        state envelope, quick slot and rewind ring
       services/
@@ -73,14 +74,16 @@ crates/
     src/
       main.rs                         Macroquad preview
       keyboard.rs                     Macroquad host-key adapter
+      machines.rs                     machine catalogue and JSON configuration
 ```
 
 Dependencies point inward: the application selects machine implementations;
 the 128K machine reuses the 48K keyboard, I/O contract and renderer; the Z80
-is independent; core
-has no frontend, CPU, or machine dependencies. An executable host can store
-different implementations as `Box<dyn Machine>`. Machines do not depend on
-Macroquad. No universal CPU trait is imposed: a future 68000 implementation
+is independent; core has no frontend, CPU, or machine dependencies. The shared
+machine manager
+stores the active implementation as `Box<dyn Machine>` and uses
+application-registered factories. Machines do not depend on
+Macroquad. No universal CPU trait is imposed: a future 68008 implementation
 for the QL need not fit the Z80's address, bus, timing, or interrupt model.
 
 ## Public contracts and ownership

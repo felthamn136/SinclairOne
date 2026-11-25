@@ -7,8 +7,8 @@
 # Project Sinclair
 
 Project Sinclair is a Rust workspace for a multi-machine Sinclair emulator.
-It contains Spectrum 48K and 128K hardware components and architecture
-previews, **not a working emulator**.
+The Spectrum 16K runs a supplied ROM with approximate timing; the other
+machines remain hardware components and architecture previews.
 
 ## Workspace
 
@@ -20,7 +20,7 @@ previews, **not a working emulator**.
 └── crates/
     ├── sinclair-core/          # machine manager and shared-service contracts
     ├── sinclair-cpu-z80/       # Z80 and its bus contract
-    ├── sinclair-spectrum48/   # 48K machine, memory map and media boundary
+    ├── sinclair-spectrum48/   # 16K and 48K Spectrum components
     ├── sinclair-spectrum128/  # 128K memory paging and machine boundary
     ├── sinclair-zx81/         # ZX81 memory, program and video components
     └── sinclair-app/          # Macroquad application
@@ -49,10 +49,10 @@ cargo test --workspace
 cargo run -p sinclair-app
 ```
 
-The application is an architecture preview, not a running machine. It opens a
-machine menu (Up/Down and Enter); Esc unloads the current machine and returns
-to the menu. ZX81, Spectrum 48K and 128K can be constructed from supplied ROMs,
-but cannot run frames. Spectrum 16K and QL are listed as not implemented.
+The application opens a machine menu (Up/Down and Enter); Esc unloads the current machine and returns
+to the menu. The Spectrum 16K executes the supplied 48K ROM and displays its
+screen. ZX81, Spectrum 48K and 128K can be constructed from supplied ROMs,
+but cannot run frames. QL is listed as not implemented.
 
 Create `machine_config.json` in the working directory to configure legally
 obtained ROMs. Paths may be absolute or relative to that directory:
@@ -69,20 +69,23 @@ obtained ROMs. Paths may be absolute or relative to that directory:
 }
 ```
 
-Set unused ROM paths to `null` or omit them. ROM 0 is 128K BASIC and ROM 1 is
+Set unused ROM paths to `null` or omit them. The 16K machine also uses
+`spectrum48_rom`. ROM 0 is 128K BASIC and ROM 1 is
 48K BASIC. The last successfully selected machine becomes the startup machine;
 set it to `null` to start at the menu. Invalid configuration is reported and
 not overwritten. The manager supports programmatic media, quick-state and
 rewind operations; these are not yet exposed as app controls.
 
-The Z80,
-Spectrum memory/bus and ULA snapshot renderer are not yet connected. The
-preview includes a Spectrum keyboard matrix display: Shift is CAPS SHIFT and
-Ctrl is SYMBOL SHIFT. TAP images can be mounted and
+The 16K model runs the Z80, keyboard and snapshot renderer together, but does
+not yet model contention, raster-accurate video or tape loading. It produces
+beeper samples, but the application does not play audio. For the other
+Spectrum models, the Z80, memory/bus and ULA renderer are not yet connected.
+The preview includes a Spectrum keyboard matrix display: Shift is CAPS SHIFT
+and Ctrl is SYMBOL SHIFT. On the 48K, TAP images can be mounted and
 validated, and TZX pulse playback is available, but neither is connected to
 ROM-driven loading. In-memory save states and rewind are available through
-the machine APIs, but the application has no snapshot controls. Audio hardware
-and output are not implemented. No ROM is distributed; future emulation must
+the machine APIs, but the application has no snapshot controls. Audio output
+and other machines' audio hardware are not implemented. No ROM is distributed; emulation must
 use a legally obtained compatible ROM.
 
 The ZX81 crate provides a machine boundary with input and in-memory state,

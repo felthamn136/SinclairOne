@@ -3,11 +3,12 @@
 ## Status and scope
 
 This is an initial architecture, not an emulator release. The Macroquad
-application is a machine-selection and keyboard-matrix preview. The 48K memory
+application includes a machine menu, a runnable instruction-timed Spectrum
+16K, and keyboard-matrix previews for incomplete machines. The 48K memory
 map and 128K paging, a standalone Z80 core, Spectrum ULA snapshot renderer, TAP and TZX
 parsers, TZX pulse playback, a 48K SNA codec and in-memory machine states
-are available. Machine scheduling, other hardware and shared-service
-backends are not implemented. Unsupported machine operations
+are available. Other machine scheduling, hardware and shared-service backends
+are not implemented. Unsupported machine operations
 return an explicit error. No ROM or copyrighted software is included. See
 [the Z80 guide](z80.md), [TAP guide](tap.md), [TZX guide](tzx.md) and
 [SNA guide](sna.md) and [state guide](state.md) for status and limitations.
@@ -57,6 +58,7 @@ crates/
       keyboard.rs                     keyboard matrix and port adapter
       machine.rs                      48K Machine and hardware composition
       memory.rs                       16 KiB ROM / 48 KiB RAM map
+      spectrum16.rs                   16K memory and instruction-timed machine
       media.rs                        machine-specific codec modules
       media/sna.rs                    48K SNA parser and serializer
       media/tap.rs                    TAP parser and direct BASIC transfers

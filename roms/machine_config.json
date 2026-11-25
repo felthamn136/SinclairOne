@@ -1,0 +1,9 @@
+{
+  "startup_machine": null,
+  "zx81_rom": "zx81.rom",
+  "zx81_ram_kib": 1,
+  "spectrum48_rom": "spectrum48.rom",
+  "spectrum128_rom0": "spectrum128-0.rom",
+  "spectrum128_rom1": "spectrum128-1.rom",
+  "rewind_history_length": 300
+}

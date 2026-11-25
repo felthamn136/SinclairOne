@@ -31,9 +31,9 @@ An invalid configuration is reported rather than overwritten. See the README
 for an example. The local-ROM factory tests check that each switch completes
 within one second; external file-system latency cannot be bounded.
 
-Current machines are component previews with no frame execution. The 16K
-Spectrum and QL are placeholders, not factories. The frontend displays a
-Spectrum keyboard preview; machine-specific input mappings, real execution,
-media controls, state controls, debugger and host service backends remain
-future work. The core manager API does not claim unsupported media formats
-or silently emulate missing operations.
+The Spectrum 16K has a runnable, instruction-timed frame loop and uses the
+configured Spectrum 48K ROM; the frontend displays its generated video.
+ZX81, Spectrum 48K and Spectrum 128K remain component previews. QL is a
+placeholder. Audio output, media controls, state controls, debugger and other
+host service backends remain future work. The core manager API does not claim
+unsupported media formats or silently emulate missing operations.

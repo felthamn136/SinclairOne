@@ -6,6 +6,15 @@ serial ports and an externally supplied QDOS ROM set. No ROM or other
 copyrighted software is bundled. Other ROM revisions and expansions are
 separate, explicitly selected compatibility profiles.
 
+The first planned firmware profile is the user-supplied Minerva 1.98 I/O-fix
+ROM, a QDOS-compatible replacement. The English and German candidate images
+in `roms/minerva_198_io_fix/` are 48,824 and 49,050 bytes respectively, both
+shorter than the 48 KiB system-ROM window. The future loader must identify
+the chosen image and verify its format, mapping and trailing-byte behaviour
+before accepting it; it must not silently truncate or reject it solely for
+not filling the window. Keep images external and do not claim compatibility
+until tested. Original QDOS remains a separate firmware profile.
+
 ## Subsystems and ownership
 
 | Subsystem | Responsibility |
@@ -180,7 +189,8 @@ deterministic rewind across uncontrolled external effects.
    reaches the startup selection and interactive SuperBASIC prompt within
    30 seconds of PAL emulated time. An automated input fixture executes a
    small BASIC program and checks its displayed output; separate fixtures
-   exercise a documented manager trap, I/O trap and multitasking.
+   exercise a documented manager trap, I/O trap and multitasking. Run these
+   separately for Minerva and any supported original QDOS revision.
 4. **Video:** exact pixel tests cover all four mode-4 colours, all eight
    mode-8 colours, flash phases, first/last pixel and scanline, both screen
    banks, and writes during display. Every output buffer has 512x256 RGBA8
@@ -204,7 +214,8 @@ deterministic rewind across uncontrolled external effects.
 ## Implementation roadmap
 
 1. Establish reference ROM/profile ownership, hardware traces and public test
-   fixtures; specify image formats and device/event interfaces.
+   fixtures; specify image formats and device/event interfaces. Validate the
+   supplied Minerva images and their ROM-window padding before loading them.
 2. Build and independently validate the 68008 core and byte-wide bus; add the
    baseline ROM/RAM map and expansion conflict checks.
 3. Add the scheduler, ZX8301, ZX8302 and IPC protocol, input and sound. Reach
@@ -221,6 +232,8 @@ deterministic rewind across uncontrolled external effects.
 
 - [QL Technical Guide](https://ia801404.us.archive.org/0/items/SinclairQLHomepage/docs/manuals/qltm.pdf)
   (QDOS, memory, hardware and expansion interfaces).
+- [Minerva firmware](https://www.kilgus.net/ql/minerva/) (QDOS-compatible
+  replacement and I/O-fix releases).
 - [QL service manual](https://www.manualslib.com/manual/4272943/Sinclair-Ql.html)
   (hardware architecture and IPC).
 - [QL screen layout](https://www.timexsinclair.com/article/the-sinclair-ql-screen/index.html)

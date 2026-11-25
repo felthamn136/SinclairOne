@@ -28,6 +28,10 @@ pub struct Frame<'a> {
 /// A host schedules machines without knowing their CPU or hardware.
 pub trait Machine {
     fn info(&self) -> MachineInfo;
+    /// Host pacing interval for machines that can execute frames.
+    fn frame_duration(&self) -> Option<std::time::Duration> {
+        None
+    }
     fn reset(&mut self) -> Result<()>;
     fn input(&mut self, event: InputEvent) -> Result<()>;
     fn run_frame(&mut self) -> Result<Frame<'_>>;

@@ -11,7 +11,7 @@ use sinclair_core::{
     Error, Machine, Result,
 };
 use sinclair_spectrum128::Spectrum128;
-use sinclair_spectrum48::Spectrum48;
+use sinclair_spectrum48::{spectrum16::Spectrum16, Spectrum48};
 use sinclair_zx81::{memory::RamSize, Zx81};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -153,9 +153,17 @@ pub fn registry(config: &MachineConfig) -> Result<MachineRegistry> {
         descriptor("zx81", "Sinclair ZX81", 1981, "Z80", "1K/16K"),
         Some(zx81_factory),
     )?;
+    let spectrum16 = config.clone();
+    let spectrum16_factory: Box<dyn MachineFactory> =
+        Box::new(move || -> Result<Box<dyn Machine>> {
+            Ok(Box::new(Spectrum16::new(&rom(
+                &spectrum16.spectrum48_rom,
+                "spectrum48_rom",
+            )?)?))
+        });
     registry.register(
         descriptor("spectrum16", "ZX Spectrum 16K", 1982, "Z80", "16K"),
-        None,
+        Some(spectrum16_factory),
     )?;
     let spectrum48 = config.clone();
     let spectrum48_factory: Box<dyn MachineFactory> =
@@ -232,7 +240,7 @@ mod tests {
             ..MachineConfig::default()
         };
         let mut manager = MachineManager::new(registry(&config).unwrap(), 2);
-        for id in ["zx81", "spectrum48", "spectrum128"] {
+        for id in ["zx81", "spectrum16", "spectrum48", "spectrum128"] {
             let start = std::time::Instant::now();
             manager.load_machine(id).unwrap();
             assert!(
@@ -265,9 +273,7 @@ mod tests {
                 .as_deref(),
             Some("zx81")
         );
-        assert!(
-            select_machine(&mut manager, &mut config, &config_path, "spectrum16", true).is_err()
-        );
+        assert!(select_machine(&mut manager, &mut config, &config_path, "ql", true).is_err());
         assert_eq!(
             MachineConfig::load(&config_path)
                 .unwrap()

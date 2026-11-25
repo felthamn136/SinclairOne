@@ -45,11 +45,10 @@ machine changes or other timeline changes. Each checkpoint stores a full
 snapshot including ROM and tape data; memory consumption grows with history
 length and mounted image size.
 
-The application is still a machine-selection and keyboard preview. The
-machine manager exposes quick-save, rewind and frame recording, but the
-application has no quick-save keys, rewind controls or machine frame loop.
-A future host must wire `UiCommand` actions and `MachineManager::run_frame`
-into that loop and surface errors.
+The machine manager exposes quick-save, rewind and frame recording. The
+application runs the Spectrum 16K through `MachineManager::run_frame`, but has
+no quick-save keys or rewind controls. Other machine frame loops remain
+unimplemented.
 
 Acceptance tests run with `cargo test -p sinclair-spectrum48 --test state`,
 `cargo test -p sinclair-spectrum128 --test state`, and `cargo test

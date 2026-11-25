@@ -69,6 +69,49 @@ impl Bus for TestBus {
 }
 
 #[test]
+fn cpu_state_preserves_interrupt_delay_pending_inputs_and_halt() {
+    let mut bus = TestBus::new(&[0xfb, 0x00, 0x76]); // EI; NOP; HALT
+    let mut cpu = Z80::new();
+    cpu.sp = 0xff00;
+    cpu.a = 0x91;
+    cpu.set_hl_alt(0xabcd);
+    cpu.ix = 0x9876;
+    cpu.im = InterruptMode::Mode1;
+    cpu.step(&mut bus);
+    cpu.set_irq(true);
+    let saved = cpu.state_bytes();
+    let mut restored = Z80::from_state_bytes(&saved).unwrap();
+    let mut other_bus = TestBus::new(&[0xfb, 0x00, 0x76]);
+    for _ in 0..2 {
+        assert_eq!(cpu.step(&mut bus), restored.step(&mut other_bus));
+        assert_eq!(cpu.state_bytes(), restored.state_bytes());
+    }
+    assert_eq!(bus.memory[..], other_bus.memory[..]);
+
+    cpu.request_nmi();
+    let mut restored = Z80::from_state_bytes(&cpu.state_bytes()).unwrap();
+    let mut other_bus = TestBus::new(&[]);
+    assert_eq!(cpu.step(&mut bus), restored.step(&mut other_bus));
+    assert_eq!(cpu.state_bytes(), restored.state_bytes());
+
+    let mut halt_bus = TestBus::new(&[0x76]);
+    let mut halted = Z80::new();
+    halted.step(&mut halt_bus);
+    let mut restored = Z80::from_state_bytes(&halted.state_bytes()).unwrap();
+    let mut other_bus = TestBus::new(&[0x76]);
+    assert!(restored.halted);
+    assert_eq!(halted.step(&mut halt_bus), restored.step(&mut other_bus));
+    assert_eq!(halted.state_bytes(), restored.state_bytes());
+
+    let mut invalid = saved;
+    invalid[26] = 2;
+    assert!(Z80::from_state_bytes(&invalid).is_err());
+    invalid = saved;
+    invalid[32] = 3;
+    assert!(Z80::from_state_bytes(&invalid).is_err());
+}
+
+#[test]
 fn base_registers_arithmetic_and_alternate_sets() {
     let mut bus = TestBus::new(&[
         0x01, 0x34, 0x12, // LD BC,1234

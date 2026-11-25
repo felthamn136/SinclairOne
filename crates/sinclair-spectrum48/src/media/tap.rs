@@ -4,7 +4,11 @@
 
 use std::path::Path;
 
-use sinclair_core::{media::MediaCodec, Error, Result};
+use sinclair_core::{
+    media::MediaCodec,
+    state::{StateReader, StateWriter},
+    Error, Result,
+};
 
 use crate::memory::{Memory, ADDRESS_SPACE_SIZE, ROM_SIZE};
 
@@ -184,6 +188,28 @@ impl TapDeck {
 
     pub fn rewind(&mut self) {
         self.position = 0;
+    }
+
+    pub fn write_state(&self, writer: &mut StateWriter) -> Result<()> {
+        let mut bytes = Vec::new();
+        for block in &self.image.blocks {
+            bytes.extend_from_slice(&(block.bytes.len() as u16).to_le_bytes());
+            bytes.extend_from_slice(&block.bytes);
+        }
+        writer.bytes(&bytes)?;
+        writer.u64(self.position as u64);
+        Ok(())
+    }
+
+    pub fn read_state(reader: &mut StateReader<'_>) -> Result<Self> {
+        let image = TapImage::parse(reader.bytes()?)
+            .map_err(|error| Error::IncompatibleState(format!("invalid TAP state: {error}")))?;
+        let position = usize::try_from(reader.u64()?)
+            .map_err(|_| Error::IncompatibleState("invalid TAP position".into()))?;
+        if position > image.blocks.len() {
+            return Err(Error::IncompatibleState("invalid TAP position".into()));
+        }
+        Ok(Self { image, position })
     }
 
     /// Copy the next standard BASIC block into RAM at the caller's address.

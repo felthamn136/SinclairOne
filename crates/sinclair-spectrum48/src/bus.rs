@@ -5,11 +5,11 @@ use sinclair_cpu_z80::Bus;
 use crate::memory::Memory;
 
 /// Machine-owned port and interrupt behavior. No I/O hardware is assumed here.
-pub trait SpectrumIo {
+pub trait SpectrumIo<M = Memory> {
     fn read_port(&mut self, port: u16) -> u8;
     fn write_port(&mut self, port: u16, value: u8);
     fn interrupt_acknowledge(&mut self) -> u8;
-    fn interrupt_data(&mut self, address: u16, memory: &mut Memory) -> u8;
+    fn interrupt_data(&mut self, address: u16, memory: &mut M) -> u8;
     fn nmi_acknowledge(&mut self);
     fn reti(&mut self);
 }

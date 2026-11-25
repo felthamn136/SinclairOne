@@ -2,13 +2,37 @@ use sinclair_core::Error;
 use sinclair_spectrum48::{
     memory::{Memory, ROM_SIZE},
     video::{
-        attribute_address, screen_address, BorderChange, FrameConfig, Ula, BORDER_LEFT, BORDER_TOP,
-        FRAME_HEIGHT, FRAME_RGBA_BYTES, FRAME_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH,
+        attribute_address, screen_address, BorderChange, FrameConfig, ScreenMemory, Ula,
+        BORDER_LEFT, BORDER_TOP, FRAME_HEIGHT, FRAME_RGBA_BYTES, FRAME_WIDTH, SCREEN_HEIGHT,
+        SCREEN_WIDTH,
     },
 };
 
 fn memory() -> Memory {
     Memory::new(&[0; ROM_SIZE]).unwrap()
+}
+
+#[test]
+fn rejects_truncated_screen_sources() {
+    struct ShortScreen;
+    impl ScreenMemory for ShortScreen {
+        fn screen_ram(&self) -> &[u8] {
+            &[0; 10]
+        }
+    }
+    let config = FrameConfig {
+        frame_number: 0,
+        border_colour: 0,
+        border_changes: &[],
+    };
+    assert!(matches!(
+        Ula::new().render_frame(&ShortScreen, &config),
+        Err(Error::InvalidInput(_))
+    ));
+    assert!(matches!(
+        Ula::new().render_scanline(&ShortScreen, &config, BORDER_TOP),
+        Err(Error::InvalidInput(_))
+    ));
 }
 
 fn pixel(frame: &[u8], x: usize, y: usize) -> [u8; 4] {

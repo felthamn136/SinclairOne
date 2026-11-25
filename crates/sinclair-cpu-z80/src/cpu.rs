@@ -66,6 +66,8 @@ pub struct Z80 {
     im0_extra_cycles: u32,
 }
 
+pub const STATE_SIZE: usize = 38;
+
 impl Z80 {
     pub fn new() -> Self {
         Self::default()
@@ -144,6 +146,91 @@ impl Z80 {
     /// Latch an NMI edge for the next instruction boundary.
     pub fn request_nmi(&mut self) {
         self.nmi_pending = true;
+    }
+
+    /// Whether interrupt inputs or the post-EI delay are awaiting execution.
+    pub fn has_pending_interrupt_state(&self) -> bool {
+        self.irq || self.nmi_pending || self.ei_delay != 0
+    }
+
+    /// Encode complete CPU state at an instruction boundary.
+    pub fn state_bytes(&self) -> [u8; STATE_SIZE] {
+        let mut bytes = [0; STATE_SIZE];
+        bytes[..16].copy_from_slice(&[
+            self.a, self.f, self.b, self.c, self.d, self.e, self.h, self.l, self.a_alt, self.f_alt,
+            self.b_alt, self.c_alt, self.d_alt, self.e_alt, self.h_alt, self.l_alt,
+        ]);
+        for (offset, value) in [(16, self.ix), (18, self.iy), (20, self.pc), (22, self.sp)] {
+            bytes[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
+        }
+        bytes[24..26].copy_from_slice(&[self.i, self.r]);
+        bytes[26..32].copy_from_slice(&[
+            self.iff1 as u8,
+            self.iff2 as u8,
+            self.halted as u8,
+            self.irq as u8,
+            self.nmi_pending as u8,
+            self.im0_active as u8,
+        ]);
+        bytes[32] = match self.im {
+            InterruptMode::Mode0 => 0,
+            InterruptMode::Mode1 => 1,
+            InterruptMode::Mode2 => 2,
+        };
+        bytes[33] = self.ei_delay;
+        bytes[34..38].copy_from_slice(&self.im0_extra_cycles.to_le_bytes());
+        bytes
+    }
+
+    /// Decode CPU state; an active IM0 instruction is not an instruction boundary.
+    pub fn from_state_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        if bytes.len() != STATE_SIZE
+            || bytes[26..32].iter().any(|&value| value > 1)
+            || bytes[31] != 0
+            || bytes[33] > 2
+        {
+            return Err("invalid Z80 state");
+        }
+        let im = match bytes[32] {
+            0 => InterruptMode::Mode0,
+            1 => InterruptMode::Mode1,
+            2 => InterruptMode::Mode2,
+            _ => return Err("invalid Z80 interrupt mode"),
+        };
+        let word = |offset| u16::from_le_bytes([bytes[offset], bytes[offset + 1]]);
+        Ok(Self {
+            a: bytes[0],
+            f: bytes[1],
+            b: bytes[2],
+            c: bytes[3],
+            d: bytes[4],
+            e: bytes[5],
+            h: bytes[6],
+            l: bytes[7],
+            a_alt: bytes[8],
+            f_alt: bytes[9],
+            b_alt: bytes[10],
+            c_alt: bytes[11],
+            d_alt: bytes[12],
+            e_alt: bytes[13],
+            h_alt: bytes[14],
+            l_alt: bytes[15],
+            ix: word(16),
+            iy: word(18),
+            pc: word(20),
+            sp: word(22),
+            i: bytes[24],
+            r: bytes[25],
+            iff1: bytes[26] != 0,
+            iff2: bytes[27] != 0,
+            halted: bytes[28] != 0,
+            irq: bytes[29] != 0,
+            nmi_pending: bytes[30] != 0,
+            im0_active: false,
+            im,
+            ei_delay: bytes[33],
+            im0_extra_cycles: u32::from_le_bytes(bytes[34..38].try_into().unwrap()),
+        })
     }
 
     pub(crate) fn fetch8(&mut self, bus: &mut impl Bus) -> u8 {

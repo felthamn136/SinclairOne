@@ -15,6 +15,18 @@ pub const FRAME_WIDTH: usize = SCREEN_WIDTH + BORDER_LEFT * 2;
 pub const FRAME_HEIGHT: usize = SCREEN_HEIGHT + BORDER_TOP * 2;
 pub const FRAME_RGBA_BYTES: usize = FRAME_WIDTH * FRAME_HEIGHT * 4;
 pub const FLASH_HALF_PERIOD_FRAMES: u64 = 16;
+pub const SCREEN_BYTES: usize = 6912;
+
+/// The currently displayed bitmap and attributes, starting at screen offset 0.
+pub trait ScreenMemory {
+    fn screen_ram(&self) -> &[u8];
+}
+
+impl ScreenMemory for Memory {
+    fn screen_ram(&self) -> &[u8] {
+        &self.ram()[..SCREEN_BYTES]
+    }
+}
 
 /// Conventional RGB approximations; Spectrum colour numbers encode B, R, G.
 pub const PALETTE: [[[u8; 4]; 8]; 2] = [
@@ -122,7 +134,7 @@ fn validate_config(config: &FrameConfig<'_>) -> Result<()> {
     Ok(())
 }
 
-/// CPU-independent renderer using the machine's 48K memory map.
+/// CPU-independent Spectrum screen renderer.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Ula;
 
@@ -134,11 +146,12 @@ impl Ula {
     /// Render a single cropped-frame row as `FRAME_WIDTH` RGBA8 pixels.
     pub fn render_scanline(
         &self,
-        memory: &Memory,
+        memory: &(impl ScreenMemory + ?Sized),
         config: &FrameConfig<'_>,
         y: usize,
     ) -> Result<Vec<u8>> {
         validate_config(config)?;
+        let screen = validate_screen(memory)?;
         if y >= FRAME_HEIGHT {
             return Err(Error::InvalidInput(format!(
                 "scanline {y} is outside frame height {FRAME_HEIGHT}"
@@ -153,7 +166,7 @@ impl Ula {
         }
         let mut pixels = vec![0; FRAME_WIDTH * 4];
         render_row(
-            memory,
+            screen,
             config,
             y,
             &mut colour,
@@ -164,20 +177,36 @@ impl Ula {
     }
 
     /// Render a complete cropped frame as row-major RGBA8 pixels.
-    pub fn render_frame(&self, memory: &Memory, config: &FrameConfig<'_>) -> Result<Vec<u8>> {
+    pub fn render_frame(
+        &self,
+        memory: &(impl ScreenMemory + ?Sized),
+        config: &FrameConfig<'_>,
+    ) -> Result<Vec<u8>> {
         validate_config(config)?;
+        let screen = validate_screen(memory)?;
         let mut pixels = vec![0; FRAME_RGBA_BYTES];
         let mut colour = config.border_colour;
         let mut event_index = 0;
         for (y, row) in pixels.chunks_mut(FRAME_WIDTH * 4).enumerate() {
-            render_row(memory, config, y, &mut colour, &mut event_index, row);
+            render_row(screen, config, y, &mut colour, &mut event_index, row);
         }
         Ok(pixels)
     }
 }
 
+fn validate_screen(memory: &(impl ScreenMemory + ?Sized)) -> Result<&[u8]> {
+    let screen = memory.screen_ram();
+    if screen.len() < SCREEN_BYTES {
+        return Err(Error::InvalidInput(format!(
+            "Spectrum screen requires {SCREEN_BYTES} bytes, got {}",
+            screen.len()
+        )));
+    }
+    Ok(screen)
+}
+
 fn render_row(
-    memory: &Memory,
+    screen: &[u8],
     config: &FrameConfig<'_>,
     y: usize,
     colour: &mut u8,
@@ -200,8 +229,9 @@ fn render_row(
         let rgba = match (active_x, active_y) {
             (Some(screen_x), Some(screen_y)) => {
                 if screen_x & 7 == 0 {
-                    bitmap = memory.read(bitmap_address(screen_x, screen_y));
-                    attribute = memory.read(attribute_address_unchecked(screen_x, screen_y));
+                    bitmap = screen[usize::from(bitmap_address(screen_x, screen_y) - 0x4000)];
+                    attribute = screen
+                        [usize::from(attribute_address_unchecked(screen_x, screen_y) - 0x4000)];
                 }
                 let bit_set = bitmap & (0x80 >> (screen_x & 7)) != 0;
                 let ink = attribute & 7;

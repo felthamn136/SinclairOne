@@ -1,0 +1,9 @@
+[package]
+name = "sinclair-spectrum128"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sinclair-core = { path = "../sinclair-core" }
+sinclair-cpu-z80 = { path = "../sinclair-cpu-z80" }
+sinclair-spectrum48 = { path = "../sinclair-spectrum48" }

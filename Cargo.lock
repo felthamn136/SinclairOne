@@ -280,6 +280,15 @@ name = "sinclair-cpu-z80"
 version = "0.1.0"
 
 [[package]]
+name = "sinclair-spectrum128"
+version = "0.1.0"
+dependencies = [
+ "sinclair-core",
+ "sinclair-cpu-z80",
+ "sinclair-spectrum48",
+]
+
+[[package]]
 name = "sinclair-spectrum48"
 version = "0.1.0"
 dependencies = [

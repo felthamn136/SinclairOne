@@ -186,6 +186,6 @@ fn machine_mounts_valid_tap_and_does_not_replace_it_on_failure() {
             format: "tzx",
             bytes: BASIC
         }),
-        Err(Error::Unsupported(_))
+        Err(Error::InvalidInput(_))
     ));
 }

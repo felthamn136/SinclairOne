@@ -4,6 +4,8 @@ use crate::Result;
 pub struct Config {
     pub audio_enabled: bool,
     pub crt_enabled: bool,
+    /// Maximum number of caller-scheduled rewind checkpoints.
+    pub rewind_history_length: usize,
 }
 
 impl Default for Config {
@@ -11,6 +13,7 @@ impl Default for Config {
         Self {
             audio_enabled: true,
             crt_enabled: false,
+            rewind_history_length: 300,
         }
     }
 }

@@ -65,7 +65,8 @@ operation only interprets standard BASIC header/data pairs.
   success, the cursor moves past the data block; `rewind` returns it to zero.
   This transactional cursor is not a simulation of physical tape movement.
 - Machine media mounting parses before replacing a previous image; invalid
-  input leaves the previous mount intact. Other format IDs are unsupported.
+  input leaves the previous mount intact. Mounting a TZX replaces the TAP,
+  and vice versa. The machine also supports SNA snapshots.
 
 ## Acceptance tests
 

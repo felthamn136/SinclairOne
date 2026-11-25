@@ -7,6 +7,9 @@ pub enum UiCommand {
     OpenMedia,
     SaveState,
     LoadState,
+    QuickSave,
+    QuickLoad,
+    Rewind,
 }
 
 pub trait UserInterface {

@@ -2,7 +2,7 @@
 
 use sinclair_core::{services::input::InputEvent, Error, Result};
 
-use crate::{bus::SpectrumIo, memory::Memory};
+use crate::bus::SpectrumIo;
 
 /// Keys are ordered by matrix row (A8 through A15), then column (D0 through D4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -184,6 +184,17 @@ impl KeyboardMatrix {
         self.rows = [0x1f; 8];
     }
 
+    pub fn state_rows(&self) -> [u8; 8] {
+        self.rows
+    }
+
+    pub fn from_state_rows(rows: [u8; 8]) -> Result<Self> {
+        if rows.iter().any(|row| row & !0x1f != 0) {
+            return Err(Error::IncompatibleState("invalid keyboard matrix".into()));
+        }
+        Ok(Self { rows })
+    }
+
     /// Return the active-low D0–D4 mask for rows selected by A8–A15.
     pub fn column_mask(&self, port: u16) -> u8 {
         let mut columns = 0x1f;
@@ -197,18 +208,18 @@ impl KeyboardMatrix {
 }
 
 /// Add keyboard scanning to a machine's existing port and interrupt device.
-pub struct KeyboardIo<'a, I: SpectrumIo + ?Sized> {
+pub struct KeyboardIo<'a, I: ?Sized> {
     keyboard: &'a KeyboardMatrix,
     io: &'a mut I,
 }
 
-impl<'a, I: SpectrumIo + ?Sized> KeyboardIo<'a, I> {
+impl<'a, I: ?Sized> KeyboardIo<'a, I> {
     pub fn new(keyboard: &'a KeyboardMatrix, io: &'a mut I) -> Self {
         Self { keyboard, io }
     }
 }
 
-impl<I: SpectrumIo + ?Sized> SpectrumIo for KeyboardIo<'_, I> {
+impl<M, I: SpectrumIo<M> + ?Sized> SpectrumIo<M> for KeyboardIo<'_, I> {
     fn read_port(&mut self, port: u16) -> u8 {
         let value = self.io.read_port(port);
         if port & 1 == 0 {
@@ -226,7 +237,7 @@ impl<I: SpectrumIo + ?Sized> SpectrumIo for KeyboardIo<'_, I> {
         self.io.interrupt_acknowledge()
     }
 
-    fn interrupt_data(&mut self, address: u16, memory: &mut Memory) -> u8 {
+    fn interrupt_data(&mut self, address: u16, memory: &mut M) -> u8 {
         self.io.interrupt_data(address, memory)
     }
 

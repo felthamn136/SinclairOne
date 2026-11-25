@@ -27,6 +27,26 @@ impl Memory {
         self.bytes[usize::from(address)]
     }
 
+    pub fn ram(&self) -> &[u8] {
+        &self.bytes[ROM_SIZE..]
+    }
+
+    pub fn rom(&self) -> &[u8] {
+        &self.bytes[..ROM_SIZE]
+    }
+
+    /// Replace RAM without changing the ROM.
+    pub fn load_ram(&mut self, ram: &[u8]) -> Result<()> {
+        if ram.len() != RAM_SIZE {
+            return Err(Error::InvalidInput(format!(
+                "Spectrum 48K RAM must be {RAM_SIZE} bytes, got {}",
+                ram.len()
+            )));
+        }
+        self.bytes[ROM_SIZE..].copy_from_slice(ram);
+        Ok(())
+    }
+
     /// Writes to the ROM address range are ignored, as on the 48K hardware.
     #[inline]
     pub fn write(&mut self, address: u16, value: u8) {
